@@ -320,4 +320,166 @@ firewall-cmd --reload
 
 systemctl restart httpd
 ss -tulnp | grep 8080
-curl [http://localhost:8080](http://localhost:8080)
+curl [http://localhost:8080](http://localhost:8080)        
+
+
+Absolutely! Here’s a **step-by-step Markdown note** you can keep for reference on how to change Apache’s default document root to a custom directory, including all the important permissions and SELinux steps.
+
+---
+
+# Changing Apache HTTPD Default Document Root to Custom Directory
+
+### **Step 1: Create Your Custom Directory**
+
+Choose a directory for your website, e.g.:
+
+```bash
+sudo mkdir -p /home/ec2-user/mywebprojects
+```
+
+Copy your website files there.
+
+---
+
+### **Step 2: Change Apache Configuration**
+
+Open Apache config:
+
+```bash
+sudo nano /etc/httpd/conf/httpd.conf
+```
+
+1. Change `DocumentRoot`:
+
+```apache
+DocumentRoot "/home/ec2-user/mywebprojects"
+```
+
+2. Change `<Directory>` block for the new path:
+
+```apache
+<Directory "/home/ec2-user/mywebprojects">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+```
+
+Save and exit.
+
+---
+
+### **Step 3: Set Directory Permissions**
+
+Make sure Apache can access the directories:
+
+```bash
+sudo chown -R apache:apache /home/ec2-user/mywebprojects
+sudo chmod -R 755 /home/ec2-user/mywebprojects
+```
+
+**Important:** Parent directories must allow “search/execute” permission for Apache:
+
+```bash
+sudo chmod o+x /home/ec2-user
+sudo chmod o+x /home
+```
+
+Check permissions:
+
+```bash
+ls -ld /home /home/ec2-user /home/ec2-user/mywebprojects
+```
+
+Expected:
+
+```text
+drwxr-xr-x /home
+drwx--x--x /home/ec2-user
+drwxr-xr-x /home/ec2-user/mywebprojects
+```
+
+---
+
+### **Step 4: Configure SELinux (if enabled)**
+
+If SELinux is enforcing, set the proper context:
+
+```bash
+sudo semanage fcontext -a -t httpd_sys_content_t "/home/ec2-user/mywebprojects(/.*)?"
+sudo restorecon -Rv /home/ec2-user/mywebprojects
+```
+
+If `semanage` is not installed:
+
+```bash
+sudo yum install policycoreutils-python-utils -y
+```
+
+---
+
+### **Step 5: Restart Apache**
+
+```bash
+sudo systemctl restart httpd
+```
+
+Check status:
+
+```bash
+sudo systemctl status httpd
+```
+
+---
+
+### **Step 6: Verify**
+
+Open in your browser:
+
+```text
+http://<server-ip>
+```
+
+You should see your website served from `/home/ec2-user/mywebprojects`.
+
+---
+
+### **Step 7: Firewall (if using custom ports)**
+
+If you changed the default port, allow it in firewall:
+
+```bash
+sudo firewall-cmd --permanent --add-port=<port>/tcp
+sudo firewall-cmd --reload
+```
+
+---
+
+### **Step 8: Troubleshooting**
+
+* If Apache fails to start:
+
+```bash
+sudo apachectl configtest
+```
+
+* If SELinux blocks access:
+
+```bash
+sudo restorecon -Rv /home/ec2-user/mywebprojects
+```
+
+* Check Apache logs:
+
+```bash
+sudo tail -n 20 /var/log/httpd/error_log
+```
+
+---
+
+This covers **all the steps you followed** and works on **RHEL/CentOS/Amazon Linux**.
+
+---
+
+
+
