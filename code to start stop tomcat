@@ -1,0 +1,63 @@
+I have written in Shell Script
+
+#!/bin/bash
+
+tomcat_path="/opt/tomcat/bin"
+path_for_change_port="/opt/tomcat/conf/server.xml"
+
+start_tomcat() {
+    echo "Starting Tomcat Server"
+    $tomcat_path/startup.sh
+}
+
+stop_tomcat() {
+    echo "Stopping Tomcat Server"
+    $tomcat_path/shutdown.sh
+}
+
+restart_tomcat() {
+    echo "Restarting Tomcat Server"
+    stop_tomcat
+    sleep 2
+    start_tomcat
+}
+
+change_port() {
+
+    attempt=0
+
+    while [ $attempt -lt 3 ]
+    do
+        read -p "Enter port number: " port_number
+
+        if [ "$port_number" -ge 0 ] && [ "$port_number" -le 65535 ] 
+        then
+            sed -i "s/port="8080"/port="$port_number"/g" $path_for_change_port
+            echo "Port changed successfully to $port_number"
+            echo "Restart Tomcat to apply changes."
+            return
+        else
+            echo "Invalid port number"
+            attempt=$((attempt + 1))
+        fi
+    done
+
+    echo "Session Expired"
+}
+
+echo "Enter 1 for restarting Tomcat Server"
+echo "Enter 2 for stopping Tomcat Server"
+echo "Enter 3 for starting Tomcat Server"
+echo "Enter 4 for changing Port Number"
+echo "Enter 5 for Exit"
+
+read -p "Please enter a valid number (1-5): " choice
+
+case $choice in
+    1) restart_tomcat ;;
+    2) stop_tomcat ;;
+    3) start_tomcat ;;
+    4) change_port ;;
+    5) echo "Exited" ;;
+    *) echo "Invalid option" ;;
+esac
